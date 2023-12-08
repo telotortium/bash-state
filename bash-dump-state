@@ -8,9 +8,7 @@ if ! (return 0 2>/dev/null); then
     exit 1
 fi
 
-bash_state_dump () {
-    # Save verbose and xtrace to make it easier to debug.
-    echo -E '__bash_dump_state_debug_opts=$(set +o | grep -Ee "(verbose|xtrace)")'
+__bash_dump_state_main () {
     # Settings
     local set_o=$(set +o)
     echo -E "${set_o}"
@@ -74,4 +72,5 @@ bash_state_dump () {
     echo -E 'unset __bash_dump_state_debug_opts'
 }
 
-bash_state_dump "$@"
+__bash_dump_state_main "$@"
+unset -f __bash_dump_state_main
