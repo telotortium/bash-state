@@ -32,15 +32,22 @@ __bash_dump_state_main () {
     # - histexpand off: parse shell functions correctly.
     echo -E 'shopt -s extglob'
     echo -E 'set +o histexpand'
-    # Variables, excluding readonly variables
-    declare -p | awk '{
-        if ($2 ~ /.*r.*/) {
+    # Variables, excluding local and readonly variables
+    awk '
+        BEGIN { local_mode=1; }
+        /^LOCALS END$/ { local_mode=0; next; }
+        {
             var=substr($3, 1, index($3, "=")-1);
-            printf("[[ -v %s ]] || ", var);
-            print; next;
+            if (local_mode) { locals[var] = 1; next; }
+            if (var == "_") { next; }
+            if (locals[var]) { next; }
+            if ($2 ~ /.*r.*/) {
+                printf("[[ -v %s ]] || ", var);
+                print; next;
+            }
+            print;
         }
-        print;
-    }'
+    ' <(local; echo LOCALS END) <(declare -p)
     # Shell functions
     # - Remove all functions first, so that only defined functions exist below.
     declare -F | sed "s/^declare /unset /"
